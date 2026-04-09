@@ -44,21 +44,32 @@ jobs:
             ninja-build \
             python3 python3-pip python3-jinja2 python3-setuptools
 
-      # 修补 config.h：添加 #include <array>
-      - name: Fix config.h missing array header
+      - name: Patch config.h (add array header)
         run: |
           sed -i '/#include <unordered_map>/a #include <array>' src/config.h
-          grep -n '#include <array>' src/config.h || echo "Patch failed"
+          echo "config.h patched"
 
-      # 修补所有包含 <format> 的源文件（GCC 12 不支持）
-      - name: Remove format header includes
+      - name: Remove all #include <format> from source files
         run: |
-          echo "Searching for files with #include <format>..."
-          grep -r '#include <format>' src/ --include=*.cpp --include=*.h || echo "No files found"
-          echo "Patching..."
-          find src/ -type f \( -name "*.cpp" -o -name "*.h" \) -exec sed -i 's/^[[:space:]]*#include <format>/\/\/ &/' {} \;
-          echo "After patch:"
-          grep -r '#include <format>' src/ --include=*.cpp --include=*.h || echo "All format includes commented out successfully"
+          find src/ -type f -name "*.cpp" -o -name "*.h" -o -name "*.hpp" | while read file; do
+            if grep -q '#include <format>' "$file"; then
+              echo "Patching $file"
+              sed -i 's/#include <format>/\/\/ &/' "$file"
+            fi
+          done
+          # 验证没有遗留的 #include <format>
+          if grep -r '#include <format>' src/; then
+            echo "ERROR: Some format includes remain"
+            exit 1
+          else
+            echo "All format includes removed"
+          fi
+
+      - name: Force C++20 in CMakeLists.txt
+        run: |
+          sed -i 's/CMAKE_CXX_STANDARD 23/CMAKE_CXX_STANDARD 20/g' CMakeLists.txt
+          sed -i 's/CMAKE_CXX_STANDARD_REQUIRED ON/CMAKE_CXX_STANDARD_REQUIRED ON/g' CMakeLists.txt
+          echo "CMakeLists.txt patched to C++20"
 
       - name: Build Sunshine
         run: |
