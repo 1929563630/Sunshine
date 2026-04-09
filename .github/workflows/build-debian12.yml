@@ -19,7 +19,6 @@ jobs:
         with:
           submodules: recursive
 
-      # 安装 Node.js 20
       - name: Install Node.js 20
         run: |
           curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
@@ -51,7 +50,13 @@ jobs:
           sed -i '/#include <unordered_map>/a #include <array>' src/config.h
           grep -n '#include <array>' src/config.h || echo "Patch failed"
 
-      - name: Build Sunshine (verbose)
+      # 修补 config.cpp：注释掉 #include <format>（GCC 12 不支持）
+      - name: Fix config.cpp format header
+        run: |
+          sed -i 's/#include <format>/\/\/ &/' src/config.cpp
+          grep -n '#include <format>' src/config.cpp || echo "Patch applied successfully"
+
+      - name: Build Sunshine
         run: |
           mkdir -p build && cd build
           cmake .. \
@@ -63,8 +68,7 @@ jobs:
             -DCMAKE_CXX_STANDARD=20 \
             -DCMAKE_CXX_STANDARD_REQUIRED=ON \
             -G Ninja
-          # 使用 -v 查看详细输出，-j1 避免并发导致的日志混乱
-          ninja -v -j1
+          ninja -v -j$(nproc)
 
       - name: Create DEB package
         run: |
