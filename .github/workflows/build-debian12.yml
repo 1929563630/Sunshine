@@ -7,40 +7,41 @@ jobs:
   build-debian12:
     runs-on: ubuntu-22.04
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: Install dependencies
+      - name: Install build dependencies
         run: |
           sudo apt update
-          sudo apt install -y build-essential cmake git pkg-config \
+          sudo apt install -y \
+            build-essential cmake git pkg-config \
             libboost-all-dev libssl-dev libavdevice-dev libavfilter-dev \
             libavformat-dev libavcodec-dev libswresample-dev libswscale-dev \
             libsdl2-dev libpulse-dev libopus-dev libvpx-dev libx264-dev \
             libx265-dev libwayland-dev libdrm-dev libcap-dev libudev-dev \
-            qtbase5-dev qtbase5-private-dev qttools5-dev-tools
+            qtbase5-dev qtbase5-private-dev qttools5-dev-tools \
+            libcurl4-openssl-dev  # 👈 修复缺失的 libcurl
 
       - name: Build Sunshine
         run: |
-          mkdir build && cd build
+          mkdir -p build && cd build
           cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
           make -j$(nproc)
 
-      - name: Install checkinstall
-        run: sudo apt install -y checkinstall
-
-      - name: Make deb package
+      - name: Create DEB package
         run: |
           cd build
-          sudo checkinstall -D --install=no --pkgname sunshine \
-            --pkgversion 2026.408.194927 --pkgarch amd64 \
-            --provides sunshine --requires "" \
+          sudo apt install -y checkinstall
+          sudo checkinstall -y -D --install=no \
+            --pkgname=sunshine \
+            --pkgversion=2026.408.194927 \
+            --pkgarch=amd64 \
             make install
 
-      - name: Upload deb
+      - name: Upload DEB artifact
         uses: actions/upload-artifact@v4
         with:
-          name: sunshine-debian12-amd64
+          name: sunshine-debian12
           path: build/sunshine_*.deb
