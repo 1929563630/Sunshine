@@ -23,7 +23,8 @@ jobs:
             libx265-dev libwayland-dev libdrm-dev libcap-dev libudev-dev \
             qtbase5-dev qtbase5-private-dev qttools5-dev-tools \
             libcurl4-openssl-dev libminiupnpc-dev \
-            libva-dev libva-drm2 libva-x11-2 libevdev-dev
+            libva-dev libva-drm2 libva-x11-2 libevdev-dev \
+            glslang-tools spirv-tools
 
       - name: Build Sunshine
         run: |
