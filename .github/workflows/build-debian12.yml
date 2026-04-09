@@ -1,21 +1,23 @@
-name: Build Debian 12 (bookworm)
+name: Build Debian 12 (native)
 
 on:
   workflow_dispatch:
 
 jobs:
-  build-debian12:
+  build-in-debian12:
     runs-on: ubuntu-22.04
+    container:
+      image: debian:bookworm  # 使用 Debian 12 官方镜像
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: Install ALL dependencies (FINAL FINAL)
+      - name: Install dependencies
         run: |
-          sudo apt update
-          sudo apt install -y \
+          apt update
+          apt install -y --no-install-recommends \
             build-essential cmake git pkg-config \
             libboost-all-dev libssl-dev \
             libavdevice-dev libavfilter-dev libavformat-dev libavcodec-dev \
@@ -29,7 +31,8 @@ jobs:
             glslang-tools spirv-tools \
             libpipewire-0.3-dev \
             libayatana-appindicator3-dev libnotify-dev \
-            doxygen graphviz
+            doxygen graphviz \
+            ninja-build
 
       - name: Build Sunshine
         run: |
@@ -37,22 +40,19 @@ jobs:
           cmake .. \
             -DCMAKE_BUILD_TYPE=Release \
             -DBUILD_TESTING=OFF \
+            -DBUILD_DOCS=OFF \
             -DSUNSHINE_ENABLE_CUDA=OFF \
-            -DCUDA_FAIL_ON_MISSING=OFF
-          make -j$(nproc)
+            -DCUDA_FAIL_ON_MISSING=OFF \
+            -G Ninja
+          ninja -j$(nproc)
 
       - name: Create DEB package
         run: |
           cd build
-          sudo apt install -y checkinstall
-          sudo checkinstall -y -D --install=no \
-            --pkgname=sunshine \
-            --pkgversion=2026.408.194927 \
-            --pkgarch=amd64 \
-            make install
+          cpack -G DEB --config ./CPackConfig.cmake
 
       - name: Upload DEB artifact
         uses: actions/upload-artifact@v4
         with:
-          name: sunshine-debian12
-          path: build/sunshine_*.deb
+          name: sunshine-debian12-native
+          path: build/sunshine-*.deb
