@@ -22,7 +22,8 @@ jobs:
             libsdl2-dev libpulse-dev libopus-dev libvpx-dev libx264-dev \
             libx265-dev libwayland-dev libdrm-dev libcap-dev libudev-dev \
             qtbase5-dev qtbase5-private-dev qttools5-dev-tools \
-            libcurl4-openssl-dev libminiupnpc-dev
+            libcurl4-openssl-dev libminiupnpc-dev \
+            libva-dev libva-drm2 libva-x11-2 libevdev-dev
 
       - name: Build Sunshine
         run: |
