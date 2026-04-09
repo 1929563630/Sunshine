@@ -37,8 +37,8 @@ jobs:
             libayatana-appindicator3-dev libnotify-dev \
             doxygen graphviz \
             ninja-build \
-            python3 python3-pip \
-            python3-jinja2 python3-setuptools
+            python3 python3-pip python3-jinja2 python3-setuptools \
+            nodejs npm
 
       - name: Build Sunshine
         run: |
