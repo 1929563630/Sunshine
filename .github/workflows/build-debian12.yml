@@ -50,11 +50,15 @@ jobs:
           sed -i '/#include <unordered_map>/a #include <array>' src/config.h
           grep -n '#include <array>' src/config.h || echo "Patch failed"
 
-      # 修补 config.cpp：注释掉 #include <format>（GCC 12 不支持）
-      - name: Fix config.cpp format header
+      # 修补所有包含 <format> 的源文件（GCC 12 不支持）
+      - name: Remove format header includes
         run: |
-          sed -i 's/#include <format>/\/\/ &/' src/config.cpp
-          grep -n '#include <format>' src/config.cpp || echo "Patch applied successfully"
+          echo "Searching for files with #include <format>..."
+          grep -r '#include <format>' src/ --include=*.cpp --include=*.h || echo "No files found"
+          echo "Patching..."
+          find src/ -type f \( -name "*.cpp" -o -name "*.h" \) -exec sed -i 's/^[[:space:]]*#include <format>/\/\/ &/' {} \;
+          echo "After patch:"
+          grep -r '#include <format>' src/ --include=*.cpp --include=*.h || echo "All format includes commented out successfully"
 
       - name: Build Sunshine
         run: |
