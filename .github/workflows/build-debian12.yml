@@ -12,7 +12,7 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install build dependencies
+      - name: Install all dependencies
         run: |
           sudo apt update
           sudo apt install -y \
@@ -22,7 +22,7 @@ jobs:
             libsdl2-dev libpulse-dev libopus-dev libvpx-dev libx264-dev \
             libx265-dev libwayland-dev libdrm-dev libcap-dev libudev-dev \
             qtbase5-dev qtbase5-private-dev qttools5-dev-tools \
-            libcurl4-openssl-dev  # 👈 修复缺失的 libcurl
+            libcurl4-openssl-dev libminiupnpc-dev
 
       - name: Build Sunshine
         run: |
