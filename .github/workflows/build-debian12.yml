@@ -51,14 +51,15 @@ jobs:
 
       - name: Remove all #include <format> from source files
         run: |
-          find src/ -type f -name "*.cpp" -o -name "*.h" -o -name "*.hpp" | while read file; do
-            if grep -q '#include <format>' "$file"; then
+          # 查找并注释所有未被注释的 #include <format>
+          find src/ -type f \( -name "*.cpp" -o -name "*.h" -o -name "*.hpp" \) | while read file; do
+            if grep -q '^[[:space:]]*#include[[:space:]]*<format>' "$file"; then
               echo "Patching $file"
-              sed -i 's/#include <format>/\/\/ &/' "$file"
+              sed -i 's/^[[:space:]]*#include[[:space:]]*<format>/\/\/ &/' "$file"
             fi
           done
-          # 验证没有遗留的 #include <format>
-          if grep -r '#include <format>' src/; then
+          # 验证没有残留的未注释 include
+          if grep -r '^[[:space:]]*#include[[:space:]]*<format>' src/; then
             echo "ERROR: Some format includes remain"
             exit 1
           else
@@ -68,7 +69,6 @@ jobs:
       - name: Force C++20 in CMakeLists.txt
         run: |
           sed -i 's/CMAKE_CXX_STANDARD 23/CMAKE_CXX_STANDARD 20/g' CMakeLists.txt
-          sed -i 's/CMAKE_CXX_STANDARD_REQUIRED ON/CMAKE_CXX_STANDARD_REQUIRED ON/g' CMakeLists.txt
           echo "CMakeLists.txt patched to C++20"
 
       - name: Build Sunshine
