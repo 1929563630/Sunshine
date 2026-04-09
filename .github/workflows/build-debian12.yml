@@ -12,7 +12,7 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install ALL dependencies (FINAL, NO MORE MISSING)
+      - name: Install ALL dependencies (FINAL FINAL)
         run: |
           sudo apt update
           sudo apt install -y \
@@ -28,7 +28,8 @@ jobs:
             libva-dev libva-drm2 libva-x11-2 \
             glslang-tools spirv-tools \
             libpipewire-0.3-dev \
-            libayatana-appindicator3-dev libnotify-dev
+            libayatana-appindicator3-dev libnotify-dev \
+            doxygen graphviz
 
       - name: Build Sunshine
         run: |
