@@ -27,7 +27,11 @@ jobs:
       - name: Build Sunshine
         run: |
           mkdir -p build && cd build
-          cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
+          cmake .. \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_TESTING=OFF \
+            -DSUNSHINE_ENABLE_CUDA=OFF \
+            -DCUDA_FAIL_ON_MISSING=OFF
           make -j$(nproc)
 
       - name: Create DEB package
