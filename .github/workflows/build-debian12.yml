@@ -12,7 +12,7 @@ jobs:
       - name: Install Git and base tools
         run: |
           apt update
-          apt install -y git ca-certificates curl gnupv
+          apt install -y git ca-certificates curl gnupg
 
       - name: Checkout code
         uses: actions/checkout@v4
