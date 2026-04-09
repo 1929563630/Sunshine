@@ -12,12 +12,18 @@ jobs:
       - name: Install Git and base tools
         run: |
           apt update
-          apt install -y git ca-certificates
+          apt install -y git ca-certificates curl gnupg
 
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           submodules: recursive
+
+      # 安装 Node.js 20 来自 NodeSource
+      - name: Install Node.js 20
+        run: |
+          curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+          apt install -y nodejs
 
       - name: Install dependencies
         run: |
@@ -37,8 +43,14 @@ jobs:
             libayatana-appindicator3-dev libnotify-dev \
             doxygen graphviz \
             ninja-build \
-            python3 python3-pip python3-jinja2 python3-setuptools \
-            nodejs npm
+            python3 python3-pip python3-jinja2 python3-setuptools
+
+      # 修补 config.h：添加 #include <array>
+      - name: Fix config.h missing array header
+        run: |
+          sed -i '/#include <unordered_map>/a #include <array>' src/config.h
+          # 验证修改
+          grep -n '#include <array>' src/config.h || echo "Patch failed"
 
       - name: Build Sunshine
         run: |
@@ -49,6 +61,8 @@ jobs:
             -DBUILD_DOCS=OFF \
             -DSUNSHINE_ENABLE_CUDA=OFF \
             -DCUDA_FAIL_ON_MISSING=OFF \
+            -DCMAKE_CXX_STANDARD=20 \
+            -DCMAKE_CXX_STANDARD_REQUIRED=ON \
             -G Ninja
           ninja -j$(nproc)
 
