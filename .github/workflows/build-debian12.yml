@@ -12,7 +12,7 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install ALL build dependencies (FINAL FULL SET)
+      - name: Install ALL dependencies (FINAL, NO MORE MISSING)
         run: |
           sudo apt update
           sudo apt install -y \
@@ -27,7 +27,8 @@ jobs:
             libcurl4-openssl-dev libminiupnpc-dev \
             libva-dev libva-drm2 libva-x11-2 \
             glslang-tools spirv-tools \
-            libpipewire-0.3-dev
+            libpipewire-0.3-dev \
+            libayatana-appindicator3-dev libnotify-dev
 
       - name: Build Sunshine
         run: |
