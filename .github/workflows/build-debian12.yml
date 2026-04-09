@@ -1,0 +1,46 @@
+name: Build Debian 12 (bookworm)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-debian12:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential cmake git pkg-config \
+            libboost-all-dev libssl-dev libavdevice-dev libavfilter-dev \
+            libavformat-dev libavcodec-dev libswresample-dev libswscale-dev \
+            libsdl2-dev libpulse-dev libopus-dev libvpx-dev libx264-dev \
+            libx265-dev libwayland-dev libdrm-dev libcap-dev libudev-dev \
+            qtbase5-dev qtbase5-private-dev qttools5-dev-tools
+
+      - name: Build Sunshine
+        run: |
+          mkdir build && cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
+          make -j$(nproc)
+
+      - name: Install checkinstall
+        run: sudo apt install -y checkinstall
+
+      - name: Make deb package
+        run: |
+          cd build
+          sudo checkinstall -D --install=no --pkgname sunshine \
+            --pkgversion 2026.408.194927 --pkgarch amd64 \
+            --provides sunshine --requires "" \
+            make install
+
+      - name: Upload deb
+        uses: actions/upload-artifact@v4
+        with:
+          name: sunshine-debian12-amd64
+          path: build/sunshine_*.deb
