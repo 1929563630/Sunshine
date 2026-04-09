@@ -12,12 +12,16 @@ jobs:
       - name: Install Git and base tools
         run: |
           apt update
-          apt install -y git ca-certificates curl gnupg
+          apt install -y git ca-certificates curl gnupv
 
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           submodules: recursive
+
+      # 修复 Git 权限错误（日志里的警告）
+      - name: Fix git safe directory
+        run: git config --global --add safe.directory /__w/Sunshine/Sunshine
 
       - name: Install Node.js 20
         run: |
@@ -44,32 +48,22 @@ jobs:
             ninja-build \
             python3 python3-pip python3-jinja2 python3-setuptools
 
-      - name: Patch config.h (add array header)
-        run: |
-          sed -i '/#include <unordered_map>/a #include <array>' src/config.h
-          echo "config.h patched"
-
-      - name: Remove all #include <format> from source files
-        run: |
-          # 查找并注释所有未被注释的 #include <format>
-          find src/ -type f \( -name "*.cpp" -o -name "*.h" -o -name "*.hpp" \) | while read file; do
-            if grep -q '^[[:space:]]*#include[[:space:]]*<format>' "$file"; then
-              echo "Patching $file"
-              sed -i 's/^[[:space:]]*#include[[:space:]]*<format>/\/\/ &/' "$file"
-            fi
-          done
-          # 验证没有残留的未注释 include
-          if grep -r '^[[:space:]]*#include[[:space:]]*<format>' src/; then
-            echo "ERROR: Some format includes remain"
-            exit 1
-          else
-            echo "All format includes removed"
-          fi
-
-      - name: Force C++20 in CMakeLists.txt
+      # 1. 禁用 C++23，强制使用 C++20
+      - name: Force C++20
         run: |
           sed -i 's/CMAKE_CXX_STANDARD 23/CMAKE_CXX_STANDARD 20/g' CMakeLists.txt
-          echo "CMakeLists.txt patched to C++20"
+          sed -i 's/set(CMAKE_CXX_STANDARD 23)/set(CMAKE_CXX_STANDARD 20)/g' CMakeLists.txt
+
+      # 2. 移除所有 <format> 头文件
+      - name: Remove #include <format>
+        run: |
+          find src/ -type f \( -name "*.cpp" -o -name "*.h" \) | xargs sed -i 's/^[[:space:]]*#include <format>/\/\/ &/'
+
+      # 3. 核心修复：把 std::format 替换为 boost::format（项目已自带 Boost）
+      - name: Replace std::format with boost::format
+        run: |
+          sed -i 's/std::format/boost::format/g' src/config.cpp
+          sed -i 's/boost::format("\([^"]*\){\([^}]*\)}")/boost::format("\1%2%\") % \2/g' src/config.cpp
 
       - name: Build Sunshine
         run: |
@@ -79,19 +73,18 @@ jobs:
             -DBUILD_TESTING=OFF \
             -DBUILD_DOCS=OFF \
             -DSUNSHINE_ENABLE_CUDA=OFF \
-            -DCUDA_FAIL_ON_MISSING=OFF \
             -DCMAKE_CXX_STANDARD=20 \
             -DCMAKE_CXX_STANDARD_REQUIRED=ON \
             -G Ninja
-          ninja -v -j$(nproc)
+          ninja -v
 
       - name: Create DEB package
         run: |
           cd build
-          cpack -G DEB --config ./CPackConfig.cmake
+          cpack -G DEB
 
       - name: Upload DEB artifact
         uses: actions/upload-artifact@v4
         with:
-          name: sunshine-debian12-native
+          name: sunshine-debian12
           path: build/sunshine-*.deb
